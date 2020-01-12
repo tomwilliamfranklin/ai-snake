@@ -121,21 +121,25 @@ let sketch = function(p) {
             if(p.keyCode === p.UP_ARROW) {
                 if(previousDirection != "down") {
                     direction = "up";
+                    console.log(direction);
                 }
             }
             if(p.keyCode === p.LEFT_ARROW) {
                 if(previousDirection != "right") {
                     direction = "left";
+                    console.log(direction);
                 }
             }
             if(p.keyCode === p.RIGHT_ARROW) {
                 if(previousDirection != "left") {
                     direction = "right";
+                    console.log(direction);
                 }
             }
             if(p.keyCode === p.DOWN_ARROW) {
                 if(previousDirection != "up") {
                     direction = "down";
+                    console.log(direction);
                 }
             }
         }
