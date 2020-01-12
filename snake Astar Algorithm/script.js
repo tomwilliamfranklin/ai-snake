@@ -1,6 +1,6 @@
-const w = 700;
-const h = 700;
-const square = 25;
+const w = 500;
+const h = 500;
+const square = 50;
 const map = new Array(w/square);
 const background = [38,38,38];
 const endBackground = [18, 18, 18];
@@ -120,12 +120,12 @@ let sketch = function(p) {
                 setScore();   
                 
                 for(let i = 0; i < closedSet.length; i++) {
-                    p.fill(closedSetColour);
+                    p.fill(background);
                     p.square(closedSet[i].x,closedSet[i].y, square);
                 }
 
                 for(let i = 0; i < openSet.length; i++) {
-                    p.fill(openSetColour);
+                    p.fill(background);
                     p.square(openSet[i].x,openSet[i].y, square);
                 }
 
@@ -147,7 +147,7 @@ let sketch = function(p) {
                 }
             }
             let current = openSet[lowest];
-            if(current === end) {
+
                 path = [];
                 let temp = current;
                 path.push(temp);
@@ -155,7 +155,7 @@ let sketch = function(p) {
                     path.push(temp.previous);
                     temp = temp.previous;
                 }
-            }
+            
 
             removeFromArray(openSet, current);
             closedSet.push(current);
@@ -188,7 +188,9 @@ let sketch = function(p) {
     }
 
     function heuristic(a,b) {
-        let d = p.dist(a.x,a.y,b.x,b.y);
+        let d = p.abs(a.x-b.x) + p.abs(a.y-a.x);
+        return d;
+        console.log(d)
     }
 
     function removeFromArray(array, item) {
