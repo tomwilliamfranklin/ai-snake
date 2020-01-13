@@ -1,6 +1,6 @@
-const w = 500;
-const h = 500;
-const square = 50;
+const w = 700;
+const h = 700;
+const square = 10;
 const map = new Array(w/square);
 const background = [38,38,38];
 const endBackground = [18, 18, 18];
@@ -97,25 +97,25 @@ let sketch = function(p) {
                 if(map[temp1 + coor[direction][0]] != null) {
                     if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]] != null) {
                         if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].body == true) {
-                            endGame();
+                         //   endGame();
                         } else {
                             if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food === true) {
                                 snakeLength++;
                                 map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food = false;
                                 createFood();
                             }
-                   //         makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
-                  //          addToSnake(temp1,temp2);
+                          //  makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
+                         //  addToSnake(temp1,temp2);
 
                             if(snake.length > snakeLength) {
-                  //             removeTail();
+                         //     removeTail();
                             }                
                         }
                     } else {
-                        endGame();
+                     //   endGame();
                 }    
                 }  else {
-                    endGame();
+                 //   endGame();
                 }        
                 setScore();   
                 
@@ -136,11 +136,13 @@ let sketch = function(p) {
         p.updatePixels();
     }
 
+    let endLoop = false;
     const neigbours = [[0, -1],[ -1, 0],[ +1, 0],[0, +1]];
     //A* algorithm
     function AIevaluate() {
         lowest = 0;
-        if(openSet.length > 0) {
+
+        if(openSet.length > 0 && endLoop === false) {
             for(var i = 0; i<openSet.length; i++) {
                 if(openSet[i].f < openSet[0].f) {
                     lowest = i;
@@ -155,7 +157,9 @@ let sketch = function(p) {
                     path.push(temp.previous);
                     temp = temp.previous;
                 }
-            
+                if(current === end) {
+                    endLoop = true;
+            }
 
             removeFromArray(openSet, current);
             closedSet.push(current);
@@ -173,7 +177,7 @@ let sketch = function(p) {
                                     map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
                                     openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
                                 }                
-                                neigbours.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], end);
+                                neigbours.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
                                 neigbours.f = neigbours.g + neigbours.h;
                                 map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;
                             }
@@ -181,16 +185,14 @@ let sketch = function(p) {
                     }
                 }
             }
-
+            AIevaluate();
         } else {
              
         }
     }
 
     function heuristic(a,b) {
-        let d = p.abs(a.x-b.x) + p.abs(a.y-a.x);
-        return d;
-        console.log(d)
+        let d = p.dist(a.x,a.y,b.x,b.y);
     }
 
     function removeFromArray(array, item) {
