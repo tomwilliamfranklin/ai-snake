@@ -27,6 +27,7 @@ let start;
 let end;
 let path = [];
 let AImoves = [];
+let initialMove = false;
 
 function Cell() {
     this.x = 0;
@@ -75,10 +76,11 @@ let sketch = function(p) {
         p.square(w/2,h/2, square);
         currentHead[0] = w/2/square;
         currentHead[1] = h/2/square;
+        initialMove = true;
         repathAI();
     }
 
-    function repathAI() {
+    function repathAI(food) {
         openSet = [];
         closedSet = [];
         openSet.push(map[currentHead[0]][currentHead[1]]);
@@ -105,14 +107,18 @@ let sketch = function(p) {
 
     //Snake Game
     p.draw = function() { 
-        for(let i = 0; i < path.length; i++) {
-            p.fill(PathColour);
-             p.square(path[i].x,path[i].y, square);
-        }
         if(AImoves) {
+            previousDirection = direction;
             direction = AImoves[0];
             AImoves.shift();
-        }
+        } 
+        
+        if(AImoves.length === 0) {
+            if(map[currentHead[0]][currentHead[1]] != end) {
+                repathAI();
+            }
+        } 
+        
             // previousDirection = direction;
 
             // if(p.keyCode === p.UP_ARROW) {
@@ -124,9 +130,7 @@ let sketch = function(p) {
         const toHead = [];
         var temp1 = currentHead[0];
         var temp2 = currentHead[1];
-        if(!direction) {
-            direction = "up";
-        }
+            if(direction) {
                 if(map[temp1 + coor[direction][0]] != null) {
                     if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]] != null) {
                         if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].body == true) {
@@ -151,7 +155,7 @@ let sketch = function(p) {
                    endGame();
                 }        
                 setScore();   
-                
+            }
                 // for(let i = 0; i < closedSet.length; i++) {
                 //     p.fill(background);
                 //     p.square(closedSet[i].x,closedSet[i].y, square);
@@ -160,6 +164,11 @@ let sketch = function(p) {
                 // for(let i = 0; i < openSet.length; i++) {
                 //     p.fill(background);
                 //     p.square(openSet[i].x,openSet[i].y, square);
+                // }
+
+                // for(let i = 0; i < path.length; i++) {
+                //     p.fill(PathColour);
+                //      p.square(path[i].x,path[i].y, square);
                 // }
         p.updatePixels();
     }
@@ -188,7 +197,7 @@ let sketch = function(p) {
                     temp = temp.previous;
                 }
             if(current === end) {
-                for(let step  = path.length-1; step != -1; step--) {
+                for(let step  = path.length-1; step != -1; step--) { 
                     for(let i = 0; i<neigbours.length; i++) {
                         if(path[step+1]) {
                           if(path[step+1].x/square == path[step].x/square + neigbours[i][0] && 
@@ -196,11 +205,11 @@ let sketch = function(p) {
                               AImoves.push(neigbours[i][2]);
                               continue;
                           }
+                        } else {
                         }
                     }
                 }
             //    AImoves = AImoves.reverse();
-        
             }
 
            removeFromArray(openSet, current);
@@ -209,6 +218,7 @@ let sketch = function(p) {
                 if(map[current.x/square + neigbours[i][0]]) {
                     if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]) {
                         if(!closedSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
+                        if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
                            if(closedSet.includes(current)) {
                               let tempG = current.g + 1;
                                 if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
@@ -224,6 +234,8 @@ let sketch = function(p) {
                                 map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;
                             }
                         }
+                        }
+
                     }
                 }
             }
@@ -333,7 +345,7 @@ let sketch = function(p) {
             map[wRandom/square][hRandom/square].food = true;
             end = map[wRandom/square][hRandom/square];
             p.square(wRandom, hRandom, square);
-            repathAI();
+            repathAI(map[wRandom/square][hRandom/square]);
         }
     }
 }
