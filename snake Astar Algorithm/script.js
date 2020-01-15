@@ -26,7 +26,7 @@ let closedSet = [];
 let start;
 let end;
 let path = [];
-
+let AImoves = [];
 
 function Cell() {
     this.x = 0;
@@ -36,6 +36,7 @@ function Cell() {
     this.f = 0; //g + h, final cost
     this.body = false;
     this.food = false;
+    this.previous = null;
 }
 
 let sketch = function(p) {
@@ -45,8 +46,6 @@ let sketch = function(p) {
     }
 
     p.setup = function() {
-        openSet = [];
-        closedSet = [];
         snake = [];
         direction = "up";
         const wrandom = Math.floor(Math.random() * (w/square));
@@ -67,6 +66,7 @@ let sketch = function(p) {
         begin();
         p.frameRate(frameRate);
         createFood();
+        AIevaluate();
     }
 
     function begin() {
@@ -75,10 +75,26 @@ let sketch = function(p) {
         p.square(w/2,h/2, square);
         currentHead[0] = w/2/square;
         currentHead[1] = h/2/square;
+        repathAI();
+    }
 
-        start = map[w/square/2][h/square/2];
-
-        openSet.push(map[w/square/2][h/square/2]);
+    function repathAI() {
+        openSet = [];
+        closedSet = [];
+        openSet.push(map[currentHead[0]][currentHead[1]]);
+        start = map[currentHead[0]][currentHead[1]];
+        path = [];
+        AImoves = [];
+        endLoop = false;
+        for(var i = 0; i!=w; i = i+square) {
+            for(var ii = 0; ii!=h; ii = ii+square) {
+                map[i/square][ii/square].g = 0;
+                map[i/square][ii/square].h = 0;
+                map[i/square][ii/square].f = 0;
+                map[i/square][ii/square].previous = null;
+            }
+        }
+        AIevaluate();   
     }
 
     const coor = {up:[0, -1],  //im actually a genius
@@ -89,55 +105,69 @@ let sketch = function(p) {
 
     //Snake Game
     p.draw = function() { 
-        AIevaluate();
+        for(let i = 0; i < path.length; i++) {
+            p.fill(PathColour);
+             p.square(path[i].x,path[i].y, square);
+        }
+        if(AImoves) {
+            direction = AImoves[0];
+            AImoves.shift();
+        }
+            // previousDirection = direction;
+
+            // if(p.keyCode === p.UP_ARROW) {
+            //     if(previousDirection != "down") {
+            //          direction = "up";
+            //      }
+            //  }
         p.frameRate(frameRate);
         const toHead = [];
         var temp1 = currentHead[0];
         var temp2 = currentHead[1];
+        if(!direction) {
+            direction = "up";
+        }
                 if(map[temp1 + coor[direction][0]] != null) {
                     if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]] != null) {
                         if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].body == true) {
-                         //   endGame();
+                            endGame();
                         } else {
                             if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food === true) {
                                 snakeLength++;
                                 map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food = false;
                                 createFood();
                             }
-                          //  makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
-                         //  addToSnake(temp1,temp2);
+                            makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
+                           addToSnake(temp1,temp2);
 
                             if(snake.length > snakeLength) {
-                         //     removeTail();
+                            removeTail();
                             }                
                         }
                     } else {
-                     //   endGame();
+                       endGame();
                 }    
                 }  else {
-                 //   endGame();
+                   endGame();
                 }        
                 setScore();   
                 
-                for(let i = 0; i < closedSet.length; i++) {
-                    p.fill(background);
-                    p.square(closedSet[i].x,closedSet[i].y, square);
-                }
+                // for(let i = 0; i < closedSet.length; i++) {
+                //     p.fill(background);
+                //     p.square(closedSet[i].x,closedSet[i].y, square);
+                // }
 
-                for(let i = 0; i < openSet.length; i++) {
-                    p.fill(background);
-                    p.square(openSet[i].x,openSet[i].y, square);
-                }
-
-                for(let i = 0; i < path.length; i++) {
-                    p.fill(PathColour);
-                    p.square(path[i].x,path[i].y, square);
-                }
+                // for(let i = 0; i < openSet.length; i++) {
+                //     p.fill(background);
+                //     p.square(openSet[i].x,openSet[i].y, square);
+                // }
         p.updatePixels();
     }
 
     let endLoop = false;
-    const neigbours = [[0, -1],[ -1, 0],[ +1, 0],[0, +1]];
+    const neigbours =    [[0, -1, 'down'],
+        [ -1, 0, 'right'],              [ +1, 0, 'left'],
+                        [0, +1, 'up']];
     //A* algorithm
     function AIevaluate() {
         lowest = 0;
@@ -157,11 +187,23 @@ let sketch = function(p) {
                     path.push(temp.previous);
                     temp = temp.previous;
                 }
-                if(current === end) {
-                    endLoop = true;
+            if(current === end) {
+                for(let step  = path.length-1; step != -1; step--) {
+                    for(let i = 0; i<neigbours.length; i++) {
+                        if(path[step+1]) {
+                          if(path[step+1].x/square == path[step].x/square + neigbours[i][0] && 
+                            path[step+1].y/square == path[step].y/square + neigbours[i][1]) {
+                              AImoves.push(neigbours[i][2]);
+                              continue;
+                          }
+                        }
+                    }
+                }
+            //    AImoves = AImoves.reverse();
+        
             }
 
-            removeFromArray(openSet, current);
+           removeFromArray(openSet, current);
             closedSet.push(current);
             for(let i  = 0; i < neigbours.length; i++) {
                 if(map[current.x/square + neigbours[i][0]]) {
@@ -189,6 +231,8 @@ let sketch = function(p) {
         } else {
              
         }
+
+
     }
 
     function heuristic(a,b) {
@@ -226,33 +270,33 @@ let sketch = function(p) {
     }
     previousDirection = "up";
      p.keyPressed = function() {
-            if(!gamePlaying) {
-                p.setup();  
-                gamePlaying = true; 
-            } else {
-            previousDirection = direction;
+        //     if(!gamePlaying) {
+        //         p.setup();  
+        //         gamePlaying = true; 
+        //     } else {
+        //     previousDirection = direction;
 
-            if(p.keyCode === p.UP_ARROW) {
-                if(previousDirection != "down") {
-                    direction = "up";
-                }
-            }
-            if(p.keyCode === p.LEFT_ARROW) {
-                if(previousDirection != "right") {
-                    direction = "left";
-                }
-            }
-            if(p.keyCode === p.RIGHT_ARROW) {
-                if(previousDirection != "left") {
-                    direction = "right";
-                }
-            }
-            if(p.keyCode === p.DOWN_ARROW) {
-                if(previousDirection != "up") {
-                    direction = "down";
-                }
-            }
-        }
+        //     if(p.keyCode === p.UP_ARROW) {
+        //         if(previousDirection != "down") {
+        //             direction = "up";
+        //         }
+        //     }
+        //     if(p.keyCode === p.LEFT_ARROW) {
+        //         if(previousDirection != "right") {
+        //             direction = "left";
+        //         }
+        //     }
+        //     if(p.keyCode === p.RIGHT_ARROW) {
+        //         if(previousDirection != "left") {
+        //             direction = "right";
+        //         }
+        //     }
+        //     if(p.keyCode === p.DOWN_ARROW) {
+        //         if(previousDirection != "up") {
+        //             direction = "down";
+        //         }
+        //     }
+        // }
     }
 
     function addToSnake(width,height) {
@@ -289,6 +333,7 @@ let sketch = function(p) {
             map[wRandom/square][hRandom/square].food = true;
             end = map[wRandom/square][hRandom/square];
             p.square(wRandom, hRandom, square);
+            repathAI();
         }
     }
 }
