@@ -48,7 +48,6 @@ let sketch = function(p) {
 
     p.setup = function() {
         snake = [];
-        direction = "up";
         const wrandom = Math.floor(Math.random() * (w/square));
         const hrandom = Math.floor(Math.random() * (h/square));
         p.createCanvas(w,h);
@@ -80,7 +79,7 @@ let sketch = function(p) {
         repathAI();
     }
 
-    function repathAI(food) {
+    function repathAI() {
         openSet = [];
         closedSet = [];
         openSet.push(map[currentHead[0]][currentHead[1]]);
@@ -103,14 +102,35 @@ let sketch = function(p) {
     left:[ -1, 0],          right:[ +1, 0],
                 down:[0, +1]};
 
-    let previousDirection = "down";
+    let previousDirection = "";
 
     //Snake Game
     p.draw = function() { 
         if(AImoves) {
             previousDirection = direction;
-            direction = AImoves[0];
-            AImoves.shift();
+            dontmovepunk = false;
+            switch(AImoves[0]) {
+                case 'up': if(previousDirection === 'down') {
+                    dontmovepunk = true;
+                } break;
+                case 'down': if(previousDirection === 'up') {
+                    dontmovepunk = true;
+                } break;
+                case 'left': if(previousDirection === 'right') {
+                    dontmovepunk = true;
+                } break;
+                case 'right': if(previousDirection === 'left') {
+                    dontmovepunk = true;
+                } break;
+            }
+
+            if(!dontmovepunk) {
+                direction = AImoves[0];
+                AImoves.shift();    
+            } else {
+                repathAI();
+            }
+            
         } 
         
         if(AImoves.length === 0) {
@@ -130,7 +150,7 @@ let sketch = function(p) {
         const toHead = [];
         var temp1 = currentHead[0];
         var temp2 = currentHead[1];
-            if(direction) {
+        if(direction) {
                 if(map[temp1 + coor[direction][0]] != null) {
                     if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]] != null) {
                         if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].body == true) {
@@ -155,7 +175,7 @@ let sketch = function(p) {
                    endGame();
                 }        
                 setScore();   
-            }
+            }  
                 // for(let i = 0; i < closedSet.length; i++) {
                 //     p.fill(background);
                 //     p.square(closedSet[i].x,closedSet[i].y, square);
@@ -204,11 +224,13 @@ let sketch = function(p) {
                             path[step+1].y/square == path[step].y/square + neigbours[i][1]) {
                               AImoves.push(neigbours[i][2]);
                               continue;
+                                
                           }
                         } else {
                         }
                     }
                 }
+               // AImoves.pop(); 
             //    AImoves = AImoves.reverse();
             }
 
@@ -345,7 +367,7 @@ let sketch = function(p) {
             map[wRandom/square][hRandom/square].food = true;
             end = map[wRandom/square][hRandom/square];
             p.square(wRandom, hRandom, square);
-            repathAI(map[wRandom/square][hRandom/square]);
+            repathAI();
         }
     }
 }
