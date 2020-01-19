@@ -1,6 +1,6 @@
-const w = 700;
-const h = 700;
-const square = 10;
+const w = 500;
+const h = 500;
+const square = 25;
 const map = new Array(w/square);
 const background = [38,38,38];
 const endBackground = [18, 18, 18];
@@ -13,8 +13,8 @@ let currentHead = [0,0];
 let snakeLength = 0;
 let gamePlaying = true;
 let snake = [];
-let frameRate = 20;
-let direction = "up";
+let frameRate = 5;
+let direction = "";
 let canvas = null;
 
 //Algorithm
@@ -38,6 +38,7 @@ function Cell() {
     this.body = false;
     this.food = false;
     this.previous = null;
+    this.step = null;
 }
 
 let sketch = function(p) {
@@ -66,7 +67,7 @@ let sketch = function(p) {
         begin();
         p.frameRate(frameRate);
         createFood();
-        AIevaluate();
+        repathAI();
     }
 
     function begin() {
@@ -76,7 +77,7 @@ let sketch = function(p) {
         currentHead[0] = w/2/square;
         currentHead[1] = h/2/square;
         initialMove = true;
-        repathAI();
+    //    repathAI();
     }
 
     function repathAI() {
@@ -108,6 +109,7 @@ let sketch = function(p) {
     p.draw = function() { 
         if(AImoves) {
             previousDirection = direction;
+
             dontmovepunk = false;
             switch(AImoves[0]) {
                 case 'up': if(previousDirection === 'down') {
@@ -130,22 +132,12 @@ let sketch = function(p) {
             } else {
                 repathAI();
             }
-            
-        } 
-        
-        if(AImoves.length === 0) {
-            if(map[currentHead[0]][currentHead[1]] != end) {
-                repathAI();
+            if(AImoves.length <= 0) {
+
+                console.log("not found!")
             }
         } 
-        
-            // previousDirection = direction;
 
-            // if(p.keyCode === p.UP_ARROW) {
-            //     if(previousDirection != "down") {
-            //          direction = "up";
-            //      }
-            //  }
         p.frameRate(frameRate);
         const toHead = [];
         var temp1 = currentHead[0];
@@ -155,14 +147,16 @@ let sketch = function(p) {
                     if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]] != null) {
                         if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].body == true) {
                             endGame();
+                           // repathAI();
                         } else {
                             if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food === true) {
                                 snakeLength++;
                                 map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food = false;
                                 createFood();
+
                             }
                             makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
-                           addToSnake(temp1,temp2);
+                             addToSnake(temp1,temp2);
 
                             if(snake.length > snakeLength) {
                             removeTail();
@@ -176,20 +170,13 @@ let sketch = function(p) {
                 }        
                 setScore();   
             }  
-                // for(let i = 0; i < closedSet.length; i++) {
-                //     p.fill(background);
-                //     p.square(closedSet[i].x,closedSet[i].y, square);
-                // }
 
-                // for(let i = 0; i < openSet.length; i++) {
-                //     p.fill(background);
-                //     p.square(openSet[i].x,openSet[i].y, square);
-                // }
+        if(AImoves.length === 0) {
 
-                // for(let i = 0; i < path.length; i++) {
-                //     p.fill(PathColour);
-                //      p.square(path[i].x,path[i].y, square);
-                // }
+            //   if(map[currentHead[0]][currentHead[1]] != end) {
+                    repathAI();
+                //  }
+        } 
         p.updatePixels();
     }
 
@@ -198,21 +185,22 @@ let sketch = function(p) {
         [ -1, 0, 'right'],              [ +1, 0, 'left'],
                         [0, +1, 'up']];
     //A* algorithm
+    let increasePath = 0;
     function AIevaluate() {
         lowest = 0;
 
         if(openSet.length > 0 && endLoop === false) {
-            for(var i = 0; i<openSet.length; i++) {
-                if(openSet[i].f < openSet[0].f) {
-                    lowest = i;
-                }
-            }
-            let current = openSet[lowest];
+
+             let current = openSet[0];
 
                 path = [];
                 let temp = current;
+                temp.step = 0;
                 path.push(temp);
+                i = 0;
                 while(temp.previous) {
+                    i++;
+                    temp.previous.step = i;
                     path.push(temp.previous);
                     temp = temp.previous;
                 }
@@ -222,14 +210,39 @@ let sketch = function(p) {
                         if(path[step+1]) {
                           if(path[step+1].x/square == path[step].x/square + neigbours[i][0] && 
                             path[step+1].y/square == path[step].y/square + neigbours[i][1]) {
-                              AImoves.push(neigbours[i][2]);
+                                if(path[step+1].step == path[step].step+1) {
+                                
+                                    AImoves.push(neigbours[i][2]);
+                                }
+                           //   AImoves.push(neigbours[i][2]);
                               continue;
                                 
                           }
                         } else {
+                            //conso
                         }
                     }
                 }
+                //  for(let i = 0; i < closedSet.length; i++) {
+                //      p.fill(background);
+                //      p.square(closedSet[i].x,closedSet[i].y, square);
+                //  }
+        
+                //  for(let i = 0; i < openSet.length; i++) {
+                //      p.fill(background);
+                //      p.square(openSet[i].x,openSet[i].y, square);
+                //  }
+        
+                //  for(let i = 0; i < path.length; i++) {
+                //      p.fill(PathColour);
+                //      p.square(path[i].x,path[i].y, square);
+                //     //  p.fill(openSetColour);
+                //     //  p.textSize(10);
+                //    //  fill(50);
+                //     // p.text(path[i].step, path[i].x, path[i].y);
+                //  }
+
+                 path = [];
                // AImoves.pop(); 
             //    AImoves = AImoves.reverse();
             }
@@ -265,8 +278,6 @@ let sketch = function(p) {
         } else {
              
         }
-
-
     }
 
     function heuristic(a,b) {
@@ -302,7 +313,7 @@ let sketch = function(p) {
         p.frameRate(0);
         
     }
-    previousDirection = "up";
+    previousDirection = "";
      p.keyPressed = function() {
         //     if(!gamePlaying) {
         //         p.setup();  
@@ -358,7 +369,6 @@ let sketch = function(p) {
 
     function createFood() {
         p.fill(food);
-
         const wRandom = Math.floor(Math.random() * w/square) * square;
         const hRandom = Math.floor(Math.random() * h/square) * square;
         if(map[wRandom/square][hRandom/square].body) {
@@ -367,7 +377,6 @@ let sketch = function(p) {
             map[wRandom/square][hRandom/square].food = true;
             end = map[wRandom/square][hRandom/square];
             p.square(wRandom, hRandom, square);
-            repathAI();
         }
     }
 }
