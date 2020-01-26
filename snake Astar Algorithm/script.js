@@ -13,7 +13,7 @@ let currentHead = [0,0];
 let snakeLength = 0;
 let gamePlaying = true;
 let snake = [];
-let frameRate = 5;
+let frameRate = 30;
 let direction = "";
 let canvas = null;
 
@@ -35,6 +35,7 @@ function Cell() {
     this.g = 0; //How far from start
     this.h = 0; //How far from end
     this.f = 0; //g + h, final cost
+    this.w = false; //Wall weighting
     this.body = false;
     this.food = false;
     this.previous = null;
@@ -48,6 +49,8 @@ let sketch = function(p) {
     }
 
     p.setup = function() {
+        wallCheck = 0;
+        wallDetected = false;
         snake = [];
         const wrandom = Math.floor(Math.random() * (w/square));
         const hrandom = Math.floor(Math.random() * (h/square));
@@ -246,55 +249,78 @@ let sketch = function(p) {
             } 
 
            removeFromArray(openSet, current);
-            closedSet.push(current);
-            for(let i  = 0; i < neigbours.length; i++) {
-                if(map[current.x/square + neigbours[i][0]]) {
-                    if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]) {
-                        if(!closedSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
-                        if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
-                           if(closedSet.includes(current)) {
-                              let tempG = current.g + 1;
-                              current.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
-                                if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {       
-                                    if(tempG < map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g) {
-                                       map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
-                                    }
-                                } else {
-                                    map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
-                                    if(current.previous !== null) {
-                                         if(snakeLength > w/square && goLong) {
-                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f >= current.f) {
-                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                            }
-                                         } else {
-                                          //   goLong = true;
-                                             if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f <= current.f) {
-                                                 openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                         
-                                             }
-                                         }
-                                    } else {
-                                            openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                        
-                                        
-                                    }
-                                }                
-                            }
-                            current.f = current.g + current.h;
-                            map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;   
-                        }
-                        }
-
-                    }
-                }
+            AIpathingLoop(current, false);
+            if(openSet.length === openSetBeforeLength && wallDetected === true) {
+                AIpathingLoop(current,true);
             }
+
             AIevaluate();
         } else {
             notfound++;
-            if(notfound > 1) {
+            if(notfound > 1) { // ToDo currently just checking if it errors more than once, kinda a hack tbh
                 goLong = false;
                 repathAI();
-                console.log("Error");
+                console.log("Maximum path exceeded");
+            }
+        }
+    }
+
+    function AIpathingLoop(current, isSecondTime) {
+        closedSet.push(current);
+        wallCheck = 0;
+        wallDetected = false;
+        openSetBeforeLength = openSet.length;
+        let secondTime;
+        if(isSecondTime) {
+            secondTime = isSecondTime;
+        }
+
+        for(let i  = 0; i < neigbours.length; i++) {
+            wallCheck++;
+            if(map[current.x/square + neigbours[i][0]]) {
+                if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]) {
+                    if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 0 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 0) {
+                        map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w = true;
+                    }
+                    if(!closedSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
+                    if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
+                       if(closedSet.includes(current)) {
+                          let tempG = current.g + 1;
+                          current.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
+                            if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {       
+                                if(tempG < map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g) {
+                                   map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
+                                }
+                            } else {
+                                map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
+                                if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w && !secondTime) {
+                                    wallDetected = true;
+                                    continue;
+                                }
+                                if(current.previous !== null) {
+                                        if(snakeLength > w/square && goLong) {
+                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f >= current.f) {
+                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                            }
+                                        } else {
+                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f <= current.f) {
+                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                        
+                                            }
+                                        }
+                                } else {
+                                        openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                    
+                                    
+                                }
+                            }                
+                        }
+
+                        current.f = current.g + current.h;
+                        map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;   
+                    }
+                }
+                }
             }
         }
     }
