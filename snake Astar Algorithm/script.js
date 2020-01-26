@@ -133,8 +133,6 @@ let sketch = function(p) {
                 repathAI();
             }
             if(AImoves.length <= 0) {
-
-                console.log("not found!")
             }
         } 
 
@@ -163,10 +161,10 @@ let sketch = function(p) {
                             }                
                         }
                     } else {
-                       endGame();
+                     //  endGame();
                 }    
                 }  else {
-                   endGame();
+                 //  endGame();
                 }        
                 setScore();   
             }  
@@ -179,20 +177,23 @@ let sketch = function(p) {
         } 
         p.updatePixels();
     }
-
+    let initialPath = false;
     let endLoop = false;
     const neigbours =    [[0, -1, 'down'],
         [ -1, 0, 'right'],              [ +1, 0, 'left'],
                         [0, +1, 'up']];
     //A* algorithm
-    let increasePath = 0;
+    let notfound = 0;
+    let goLong = true;
     function AIevaluate() {
         lowest = 0;
 
         if(openSet.length > 0 && endLoop === false) {
-
-             let current = openSet[0];
-
+            let current = openSet[0];
+           //  console.log(path)
+            if(current.x === end.x && current.y === end.y) {
+                goLong = true;
+                notfound = 0;
                 path = [];
                 let temp = current;
                 temp.step = 0;
@@ -204,7 +205,6 @@ let sketch = function(p) {
                     path.push(temp.previous);
                     temp = temp.previous;
                 }
-            if(current === end) {
                 for(let step  = path.length-1; step != -1; step--) { 
                     for(let i = 0; i<neigbours.length; i++) {
                         if(path[step+1]) {
@@ -233,19 +233,17 @@ let sketch = function(p) {
                 //      p.square(openSet[i].x,openSet[i].y, square);
                 //  }
         
-                //  for(let i = 0; i < path.length; i++) {
-                //      p.fill(PathColour);
+                //   for(let i = 0; i < path.length; i++) {
+                //       p.fill(PathColour);
                 //      p.square(path[i].x,path[i].y, square);
-                //     //  p.fill(openSetColour);
-                //     //  p.textSize(10);
-                //    //  fill(50);
-                //     // p.text(path[i].step, path[i].x, path[i].y);
-                //  }
+                // //     //  p.fill(openSetColour);
+                // //     //  p.textSize(10);
+                // //    //  fill(50);
+                // //     // p.text(path[i].step, path[i].x, path[i].y);
+                //   }
 
                  path = [];
-               // AImoves.pop(); 
-            //    AImoves = AImoves.reverse();
-            }
+            } 
 
            removeFromArray(openSet, current);
             closedSet.push(current);
@@ -256,18 +254,34 @@ let sketch = function(p) {
                         if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
                            if(closedSet.includes(current)) {
                               let tempG = current.g + 1;
-                                if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
+                              current.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
+                                if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {       
                                     if(tempG < map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g) {
-                                        map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
+                                       map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
                                     }
                                 } else {
                                     map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
-                                    openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                    if(current.previous !== null) {
+                                         if(snakeLength > w/square && goLong) {
+                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f >= current.f) {
+                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                            }
+                                         } else {
+                                          //   goLong = true;
+                                             if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f <= current.f) {
+                                                 openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                         
+                                             }
+                                         }
+                                    } else {
+                                            openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                        
+                                        
+                                    }
                                 }                
-                                neigbours.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
-                                neigbours.f = neigbours.g + neigbours.h;
-                                map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;
                             }
+                            current.f = current.g + current.h;
+                            map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;   
                         }
                         }
 
@@ -276,12 +290,18 @@ let sketch = function(p) {
             }
             AIevaluate();
         } else {
-             
+            notfound++;
+            if(notfound > 1) {
+                goLong = false;
+                repathAI();
+                console.log("Error");
+            }
         }
     }
 
     function heuristic(a,b) {
         let d = p.dist(a.x,a.y,b.x,b.y);
+        return d;
     }
 
     function removeFromArray(array, item) {
@@ -376,6 +396,7 @@ let sketch = function(p) {
         } else {
             map[wRandom/square][hRandom/square].food = true;
             end = map[wRandom/square][hRandom/square];
+            openSet = [];
             p.square(wRandom, hRandom, square);
         }
     }
