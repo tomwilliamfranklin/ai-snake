@@ -1,1 +1,1 @@
-# neural-networks
+# ai-snake
