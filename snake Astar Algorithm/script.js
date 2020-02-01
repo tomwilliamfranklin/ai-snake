@@ -10,7 +10,7 @@ const food = [50, 168, 82];
 const head = [250, 138, 82];
 const dead = [166, 45, 45];
 let currentHead = [0,0];
-let snakeLength = 0;
+let snakeLength = 1;
 let gamePlaying = true;
 let snake = [];
 let frameRate = 30;
@@ -25,6 +25,7 @@ let openSet = [];
 let closedSet = [];
 let start;
 let end;
+let foodend;
 let path = [];
 let AImoves = [];
 let initialMove = false;
@@ -157,7 +158,7 @@ let sketch = function(p) {
 
                             }
                             makeHead(temp1 + coor[direction][0], temp2 + coor[direction][1]);
-                             addToSnake(temp1,temp2);
+                            addToSnake(temp1,temp2);
 
                             if(snake.length > snakeLength) {
                             removeTail();
@@ -170,10 +171,12 @@ let sketch = function(p) {
                  //  endGame();
                 }        
                 setScore();   
-            }  
+        }else {
+            end = foodend;
+            AIevaluate();
+        }
 
         if(AImoves.length === 0) {
-
             //   if(map[currentHead[0]][currentHead[1]] != end) {
                     repathAI();
                 //  }
@@ -190,13 +193,13 @@ let sketch = function(p) {
     let goLong = true;
     function AIevaluate() {
         lowest = 0;
-
+        let current = openSet[0];
         if(openSet.length > 0 && endLoop === false) {
-            let current = openSet[0];
            //  console.log(path)
             if(current.x === end.x && current.y === end.y) {
                 goLong = true;
                 notfound = 0;
+                stuck = 0;
                 path = [];
                 let temp = current;
                 temp.step = 0;
@@ -253,16 +256,55 @@ let sketch = function(p) {
             if(openSet.length === openSetBeforeLength && wallDetected === true) {
                 AIpathingLoop(current,true);
             }
-
+            if(openSet.length === 0) {
+                  //   SurvivalMode();
+            } 
             AIevaluate();
         } else {
             notfound++;
             if(notfound > 1) { // ToDo currently just checking if it errors more than once, kinda a hack tbh
                 goLong = false;
-                repathAI();
+                SurvivalMode();
+                
+                // p.fill(randomColour());
+                // p.square(end.x,end.y, square);
+
+                current = openSet[0];
+                openSet = [];
+                closedSet = [];
+                openSet.push(map[currentHead[0]][currentHead[1]]);
+                start = map[currentHead[0]][currentHead[1]];
+                path = [];
+                AImoves = [];
+                endLoop = false;
+                for(var i = 0; i!=w; i = i+square) {
+                    for(var ii = 0; ii!=h; ii = ii+square) {
+                        map[i/square][ii/square].g = 0;
+                        map[i/square][ii/square].h = 0;
+                        map[i/square][ii/square].f = 0;
+                        map[i/square][ii/square].previous = null;
+                    }
+                }
+                AIpathingLoop(map[currentHead[0]][currentHead[1]], true);
                 console.log("Maximum path exceeded");
             }
         }
+    }
+    let stuck = 0;
+    function SurvivalMode() {
+        openSet.push(map[currentHead[0]][currentHead[1]]);
+        furthestPoint = null;
+        for(var i =0; i<closedSet.length; i++) {
+            if(furthestPoint) {
+                if(furthestPoint.h < closedSet[i].h) {
+                    furthestPoint = closedSet[i];
+                }
+            } else {
+                furthestPoint = closedSet[i];
+            }
+        }
+        end = furthestPoint;
+    //    testColour(furthestPoint.x/square, furthestPoint.y/square) 
     }
 
     function AIpathingLoop(current, isSecondTime) {
@@ -270,6 +312,8 @@ let sketch = function(p) {
         wallCheck = 0;
         wallDetected = false;
         openSetBeforeLength = openSet.length;
+        // ? Basically, if its searched for a path which contains a wall, complete the loop, and if there 
+        // ? isn't a better option, do the loop again with the wall cell. 
         let secondTime;
         if(isSecondTime) {
             secondTime = isSecondTime;
@@ -279,63 +323,71 @@ let sketch = function(p) {
             wallCheck++;
             if(map[current.x/square + neigbours[i][0]]) {
                 if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]) {
-                    if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 0 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 0) {
-                        map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w = true;
-                    }
-                    if(!closedSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
-                    if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
-                       if(closedSet.includes(current)) {
-                          let tempG = current.g + 1;
-                          current.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
-                            if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {       
-                                if(tempG < map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g) {
-                                   map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
-                                }
-                            } else {
-                                map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
-                                if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w && !secondTime) {
-                                    wallDetected = true;
-                                    continue;
-                                }
-                                if(current.previous !== null) {
-                                        if(snakeLength > w/square && goLong) {
-                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f >= current.f) {
-                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                            }
-                                        } else {
-                                            if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f <= current.f) {
-                                                openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                        
-                                            }
-                                        }
-                                } else {
-                                        openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
-                                    
-                                    
-                                }
-                            }                
+                        if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].x === 0 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 475 || map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].y === 0) {
+                            map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w = true;
                         }
+                        if(!closedSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {
+                        if(!map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].body) {
+                        if(closedSet.includes(current)) {
+                            let tempG = current.g + 1;
 
-                        current.f = current.g + current.h;
-                        map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;   
+                            current.h = heuristic(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]], start);
+
+                                if(openSet.includes(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]])) {   
+    
+                                    if(tempG < map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g) {
+                                    map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
+                                    }
+                                } else {
+                                    map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].g = tempG;
+                                    if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].w && !secondTime) {
+                                        wallDetected = true;
+                                        continue;
+                                    }
+                                    if(current.previous !== null) {
+                                            if(snakeLength > w/square && goLong) {
+                                                if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f >= current.f) {
+                                                    openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                                }
+                                            } else {
+                                                if(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].f <= current.f) {
+                                                    openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                            
+                                                }
+                                            }
+                                    } else {
+                                            openSet.push(map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]]);
+                                        
+                                        
+                                    }
+                                }                
+                            }
+
+                            current.f = current.g + current.h;
+                            map[current.x/square + neigbours[i][0]][current.y/square + neigbours[i][1]].previous = current;   
+                        } 
                     }
-                }
                 }
             }
         }
+     //   end = foodend;
     }
 
     function heuristic(a,b) {
-        let d = p.dist(a.x,a.y,b.x,b.y);
-        return d;
+            let d = p.dist(a.x,a.y,b.x,b.y);
+            return d;
     }
 
     function removeFromArray(array, item) {
-        for(let i = array.length-1; i>=0; i--) {
-            if(array[i].x == item.x && array[i].y == item.y) {
-                array.splice(i,1);
-            }
+        if(array.length <= 0) {
+            console.log("hm")
         }
+            for(let i = array.length-1; i>=0; i--) {
+                if(array[i].x == item.x && array[i].y == item.y) {
+                    array.splice(i,1);
+                }
+            }
+        
     }
     function endGame() {
         for(var i = 0; i!=w; i = i+square) {
@@ -406,6 +458,16 @@ let sketch = function(p) {
         currentHead[1] = height;
     }
 
+    function testColour(width,height) {    
+        p.fill(randomColour());
+        p.square(width*square,height*square, square);
+    }
+
+    function randomColour() {
+        return [Math.floor(Math.random(255) * 100), Math.floor(Math.random(255) * 100), Math.floor(Math.random(255) * 100)];
+    }
+
+
     function removeTail() {
         p.fill(background);
         var tail = snake.shift();
@@ -421,7 +483,10 @@ let sketch = function(p) {
             createFood();
         } else {
             map[wRandom/square][hRandom/square].food = true;
+            // ? variable which can be not food if the snake can't get to the food
             end = map[wRandom/square][hRandom/square];
+            // ? Variable which is always a pointer to food
+            foodend = map[wRandom/square][hRandom/square]; 
             openSet = [];
             p.square(wRandom, hRandom, square);
         }
