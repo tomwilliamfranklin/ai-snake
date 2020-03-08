@@ -1,5 +1,5 @@
-const w = 250;
-const h = 250;
+const w = 500;
+const h = 500;
 const square = 25;
 const map = new Array(w/square);
 const background = [38,38,38];
@@ -152,6 +152,7 @@ let sketch = function(p) {
                            // repathAI();
                         } else {
                             if(map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food === true) {
+                                generateThought("found");
                                 snakeLength++;
                                 map[temp1 + coor[direction][0]][temp2+coor[direction][1]].food = false;
                                 createFood();
@@ -190,13 +191,19 @@ let sketch = function(p) {
                         [0, +1, 'up']];
     //A* algorithm
     let notfound = 0;
+    let definitelyNotFound = 0;
     let goLong = true;
     function AIevaluate() {
         lowest = 0;
         let current = openSet[0];
         if(openSet.length > 0 && endLoop === false) {
            //  console.log(path)
+           end = foodend;
             if(current.x === end.x && current.y === end.y) {
+                // So the message for "found it!" has a chance to stay on screen
+                window.setTimeout(() => {generateThought('see'); }, 1000);
+
+                definitelyNotFound = 0;
                 goLong = true;
                 notfound = 0;
                 stuck = 0;
@@ -242,6 +249,7 @@ let sketch = function(p) {
         } else {
             notfound++;
             if(notfound > 1) { // ToDo currently just checking if it errors more than once, kinda a hack tbh
+                generateThought("broke")
                 goLong = false;
                 SurvivalMode();
                 // p.fill(background);
@@ -252,11 +260,15 @@ let sketch = function(p) {
                 openSet = [current];
                 closedset = [];
                 notfound = 0;
-                AIevaluate(current, true);
+                definitelyNotFound++;
+                if(definitelyNotFound > 5) {
+                    generateThought("error");  
+                } else {
+                    AIevaluate(current, true);
+                }
             }
         }
     }
-    let stuck = 0;
     function SurvivalMode() {
         openSet.push(map[currentHead[0]][currentHead[1]]);
         furthestPoint = null;
@@ -485,6 +497,23 @@ function resetFunc() {
 
 function setScore() {
     document.getElementById('score').innerHTML = snakeLength;
+}
+
+function generateThought(key) {
+    let thought = 'Hello! :)'
+
+    switch(key) {
+        case 'found': thought = 'Found it! :D';
+        break;
+        case 'broke': thought = "I can't see it :(";
+        break;
+        case 'error': thought = " (error) I did say I was buggy :'(";
+        break;
+        case 'see': thought = "I see it! :o";
+        break;
+    }
+
+    document.getElementById('snakeThoughts').innerHTML = thought;
 }
 
 $(document).ready(function() {

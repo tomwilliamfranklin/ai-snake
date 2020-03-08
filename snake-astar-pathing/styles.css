@@ -181,7 +181,20 @@
     margin-top:40px;
     border-radius: 5px;
   }
-  
+ 
+  .thoughts {
+    text-align: center;
+  }
+
+  .thoughts > p {
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+    width:fit-content;
+    margin:auto;
+    padding:10px;
+    margin-top:40px;
+    border-radius: 5px;
+  }
   
   /* Checkbox by some guy on codepen: 
   https://codepen.io/ngc-yn/pen/vYYXRoQ
