@@ -1,5 +1,5 @@
-const w = 500;
-const h = 500;
+const w = 250;
+const h = 250;
 const square = 25;
 const map = new Array(w/square);
 const background = [38,38,38];
@@ -220,33 +220,12 @@ let sketch = function(p) {
                                 
                                     AImoves.push(neigbours[i][2]);
                                 }
-                           //   AImoves.push(neigbours[i][2]);
                               continue;
-                                
                           }
                         } else {
-                            //conso
                         }
                     }
                 }
-                //  for(let i = 0; i < closedSet.length; i++) {
-                //      p.fill(background);
-                //      p.square(closedSet[i].x,closedSet[i].y, square);
-                //  }
-        
-                //  for(let i = 0; i < openSet.length; i++) {
-                //      p.fill(background);
-                //      p.square(openSet[i].x,openSet[i].y, square);
-                //  }
-        
-                //   for(let i = 0; i < path.length; i++) {
-                //       p.fill(PathColour);
-                //      p.square(path[i].x,path[i].y, square);
-                // //     //  p.fill(openSetColour);
-                // //     //  p.textSize(10);
-                // //    //  fill(50);
-                // //     // p.text(path[i].step, path[i].x, path[i].y);
-                //   }
 
                  path = [];
             } 
@@ -265,28 +244,15 @@ let sketch = function(p) {
             if(notfound > 1) { // ToDo currently just checking if it errors more than once, kinda a hack tbh
                 goLong = false;
                 SurvivalMode();
-                
-                // p.fill(randomColour());
+                // p.fill(background);
+                // p.fill(randomColour())
                 // p.square(end.x,end.y, square);
 
                 current = openSet[0];
-                openSet = [];
-                closedSet = [];
-                openSet.push(map[currentHead[0]][currentHead[1]]);
-                start = map[currentHead[0]][currentHead[1]];
-                path = [];
-                AImoves = [];
-                endLoop = false;
-                for(var i = 0; i!=w; i = i+square) {
-                    for(var ii = 0; ii!=h; ii = ii+square) {
-                        map[i/square][ii/square].g = 0;
-                        map[i/square][ii/square].h = 0;
-                        map[i/square][ii/square].f = 0;
-                        map[i/square][ii/square].previous = null;
-                    }
-                }
-                AIpathingLoop(map[currentHead[0]][currentHead[1]], true);
-                console.log("Maximum path exceeded");
+                openSet = [current];
+                closedset = [];
+                notfound = 0;
+                AIevaluate(current, true);
             }
         }
     }
@@ -296,12 +262,24 @@ let sketch = function(p) {
         furthestPoint = null;
         for(var i =0; i<closedSet.length; i++) {
             if(furthestPoint) {
-                if(furthestPoint.h < closedSet[i].h) {
-                    furthestPoint = closedSet[i];
+                for(var ii = 0; ii<neigbours.length; ii++) {
+                    if(map[furthestPoint.x/square + (neigbours[ii][0]*4)]) {
+                        if(map[furthestPoint.x/square + (neigbours[ii][0]*4)][furthestPoint.y/square + (neigbours[ii][1]*4)]) {
+                            if(!map[furthestPoint.x/square + (neigbours[ii][0]*4)][furthestPoint.y/square + (neigbours[ii][1]*4)].body) {
+                                if(furthestPoint.h < closedSet[i].h) {
+                                    furthestPoint = closedSet[i];
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
-                furthestPoint = closedSet[i];
+            //If furthest point is null, make it the closedSet
+             furthestPoint = closedSet[i];
             }
+        }
+        if(furthestPoint === null) {
+            furthestPoint = closedSet[i];
         }
         end = furthestPoint;
     //    testColour(furthestPoint.x/square, furthestPoint.y/square) 
@@ -380,7 +358,7 @@ let sketch = function(p) {
 
     function removeFromArray(array, item) {
         if(array.length <= 0) {
-            console.log("hm")
+            console.log('%c Error, there is nothing to remove from the array! ', 'background: #222; color: #bada55')
         }
             for(let i = array.length-1; i>=0; i--) {
                 if(array[i].x == item.x && array[i].y == item.y) {
@@ -413,6 +391,7 @@ let sketch = function(p) {
     }
     previousDirection = "";
      p.keyPressed = function() {
+        // ? For manual movement via keys
         //     if(!gamePlaying) {
         //         p.setup();  
         //         gamePlaying = true; 
@@ -450,7 +429,6 @@ let sketch = function(p) {
     }
 
     function makeHead(width,height) {
-        
         p.fill(head);
         p.square(width*square,height*square, square);
         map[width][height].body = true;
