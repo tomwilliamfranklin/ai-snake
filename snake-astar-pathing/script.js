@@ -13,7 +13,7 @@ let currentHead = [0,0];
 let snakeLength = 1;
 let gamePlaying = true;
 let snake = [];
-let frameRate = 30;
+let frameRate = 144;
 let direction = "";
 let canvas = null;
 
